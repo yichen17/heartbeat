@@ -8,6 +8,7 @@ import client.demo.model.dto.WeatherDate;
 import client.demo.model.dto.WeatherResponse;
 import client.demo.service.WeatherService;
 import client.demo.service.WeatherServiceBack;
+import cn.hutool.extra.mail.MailUtil;
 import cn.hutool.http.HttpRequest;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
@@ -80,9 +81,11 @@ public class ScheduleTask {
                     }
                 });
                 log.info("执行结果,normal total {}, back total {}",totalA,totalB);
+                MailUtil.send("q07218396@163.com", "每日天气记录完毕", "索引表记录"+totalA+"\n非索引表记录"+totalB, false);
             }
             else{
                 log.warn("未请求到数据");
+                MailUtil.send("q07218396@163.com", "每日天气记录出错", "请求气象局接口出错", false);
             }
         } catch (ParseException e) {
             log.warn("转换日期出错 {}",fetchTime);

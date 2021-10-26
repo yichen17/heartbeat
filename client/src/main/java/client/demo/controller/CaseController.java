@@ -2,11 +2,17 @@ package client.demo.controller;
 
 import client.demo.model.Weather;
 import client.demo.service.WeatherService;
+import cn.hutool.extra.mail.Mail;
+import cn.hutool.extra.mail.MailAccount;
+import cn.hutool.extra.mail.MailUtil;
+import com.sun.mail.util.MailSSLSocketFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.authz.annotation.RequiresUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.security.GeneralSecurityException;
 
 /**
  * @author Qiuxinchao
@@ -21,6 +27,13 @@ public class CaseController {
 
     @Autowired
     private WeatherService weatherService;
+
+
+    @RequestMapping("/mail/send")
+    public String sendMailMessage() throws GeneralSecurityException {
+        return  MailUtil.send("q07218396@163.com", "每日天气记录出错", "请求气象局接口出错", false);
+    }
+
 
     @RequestMapping("/weather/add")
     public String weatherAdd(){
