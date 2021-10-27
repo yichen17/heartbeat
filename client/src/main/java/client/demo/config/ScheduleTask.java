@@ -46,7 +46,7 @@ public class ScheduleTask {
      *   可用查询链接  https://weather.cma.cn/web/weather/map.html
      *      调用接口  https://weather.cma.cn/api/map/weather/1?t=1635210265612   尾部为时间戳
      */
-    @Scheduled(cron = "0 0 6 * * ?")
+    @Scheduled(cron = "0 0 6,18 * * ?")
     private void loanWeatherEveryday(){
         SimpleDateFormat sdf=new SimpleDateFormat(CommonConstants.DAY_DATE_FORMAT);
         String day=sdf.format(new Date());
@@ -57,7 +57,7 @@ public class ScheduleTask {
             long timestamp=date.getTime();
             String body = HttpRequest.get("https://weather.cma.cn/api/map/weather/1?t=" + timestamp)
                     .timeout(2000).execute().body();
-            log.info("{} 调用气象局接口获取返回值 {}",fetchTime,body);
+//            log.info("{} 调用气象局接口获取返回值 {}",fetchTime,body);
             WeatherResponse weatherResponse = JSONObject.parseObject(body, WeatherResponse.class);
             if("0".equals(weatherResponse.getCode())){
                 WeatherDate weatherDate = weatherResponse.getData();
