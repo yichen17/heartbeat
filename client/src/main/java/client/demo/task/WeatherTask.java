@@ -1,4 +1,4 @@
-package client.demo.config;
+package client.demo.task;
 
 import client.demo.constants.CommonConstants;
 import client.demo.constants.CountryConstants;
@@ -27,12 +27,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Qiuxinchao
  * @version 1.0
  * @date 2021/10/26 8:58
- * @describe  定时任务调度
+ * @describe  地区天气-定时任务调度
+ *    参考链接  https://www.cnblogs.com/mmzs/p/10161936.html
  */
 @Configuration
 @EnableScheduling
 @Slf4j
-public class ScheduleTask {
+public class WeatherTask {
 
 
     @Autowired
@@ -46,10 +47,14 @@ public class ScheduleTask {
      *   可用查询链接  https://weather.cma.cn/web/weather/map.html
      *      调用接口  https://weather.cma.cn/api/map/weather/1?t=1635210265612   尾部为时间戳
      */
-    @Scheduled(cron = "0 0 6 * * ?")
+    @Scheduled(cron = "0 0 6,18 * * ?")
     private void loanWeatherEveryday(){
         SimpleDateFormat sdf=new SimpleDateFormat(CommonConstants.DAY_DATE_FORMAT);
         String day=sdf.format(new Date());
+        if(weatherService.findByDate(day)>0){
+            log.info("当天的天气情况已记录");
+            return ;
+        }
         String fetchTime = day+" 06:00:00";
         try{
             sdf=new SimpleDateFormat(CommonConstants.NORMAL_DATE_FORMAT);
@@ -57,7 +62,7 @@ public class ScheduleTask {
             long timestamp=date.getTime();
             String body = HttpRequest.get("https://weather.cma.cn/api/map/weather/1?t=" + timestamp)
                     .timeout(2000).execute().body();
-            log.info("{} 调用气象局接口获取返回值 {}",fetchTime,body);
+//            log.info("{} 调用气象局接口获取返回值 {}",fetchTime,body);
             WeatherResponse weatherResponse = JSONObject.parseObject(body, WeatherResponse.class);
             if("0".equals(weatherResponse.getCode())){
                 WeatherDate weatherDate = weatherResponse.getData();
