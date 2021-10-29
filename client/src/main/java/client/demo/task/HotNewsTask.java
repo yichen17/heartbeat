@@ -55,16 +55,16 @@ public class HotNewsTask {
     /**
      *  百度 热门 新闻 记录
      */
-//    @Scheduled(cron = "0 0 5,16 * * ?")
-    @Scheduled(cron = "0 * * * * ?")
+    @Scheduled(cron = "0 0 8,19 * * ?")
+//    @Scheduled(cron = "0 * * * * ?")
     public void loadHotNewsBaidu() {
         try{
             Document doc = Jsoup.connect(baidu_url).timeout(2000).get();
             Element hotNews = doc.getElementsByClass("opr-toplist1-table_3K7iH").get(0);
             // 遍历 有2个 一个被隐藏了
             int totalA,errorA,totalB,errorB;
+            totalA=0;errorA=0;totalB=0;errorB=0;
             for(int i=0;i<hotNews.childNodeSize();i++){
-                totalA=0;errorA=0;totalB=0;errorB=0;
                 Element child = hotNews.child(i);
                 for(int j=0;j<child.childNodeSize();j++){
                     //  有效数据节点
@@ -97,10 +97,10 @@ public class HotNewsTask {
                     }
 
                 }
-                log.info("totalA {},errorA {}, totalB {}, errorB {}",totalA,errorA,totalB,errorB);
-                MailUtil.send("q07218396@163.com", "每天百度热门信息记录",
-                        "扩展表 => success "+totalA+" error "+errorA+". 一般表 => success "+totalB+" error "+errorB, false);
             }
+            log.info("totalA {},errorA {}, totalB {}, errorB {}",totalA,errorA,totalB,errorB);
+            MailUtil.send("q07218396@163.com", "每天百度热门信息记录",
+                    "扩展表 => success "+totalA+" error "+errorA+". 一般表 => success "+totalB+" error "+errorB, false);
         } catch (IOException e) {
             log.warn("jsoup 获取数据出错");
         }
