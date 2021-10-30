@@ -19,4 +19,12 @@ public interface WeatherService {
      */
     public int insert(Weather weather);
 
+    /**
+     * 根据日期查询记录条数
+     * @param date 指定的日期 格式为 yyyy-MM-dd
+     * @return 该日期插入的天气条数
+     */
+    public int findByDate(String date);
+
+
 }

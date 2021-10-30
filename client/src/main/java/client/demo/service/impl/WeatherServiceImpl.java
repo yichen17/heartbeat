@@ -2,9 +2,12 @@ package client.demo.service.impl;
 
 import client.demo.dao.WeatherMapper;
 import client.demo.model.Weather;
+import client.demo.model.WeatherExample;
 import client.demo.service.WeatherService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
  * @author Qiuxinchao
@@ -21,5 +24,13 @@ public class WeatherServiceImpl implements WeatherService {
     @Override
     public int insert(Weather weather) {
         return weatherMapper.insert(weather);
+    }
+
+    @Override
+    public int findByDate(String date) {
+        WeatherExample example=new WeatherExample();
+        example.createCriteria().andTimeEqualTo(date);
+        List<Weather> weathers = weatherMapper.selectByExample(example);
+        return weathers.size();
     }
 }
