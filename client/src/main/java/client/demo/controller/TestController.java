@@ -1,5 +1,7 @@
 package client.demo.controller;
 
+import client.demo.dao.DailyClotherFeelDao;
+import client.demo.model.DailyClotherFeelDo;
 import client.demo.service.VisitHostService;
 import client.demo.service.VisitLogService;
 import client.demo.utils.MapTools;
@@ -22,9 +24,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import sun.security.provider.Sun;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
+import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -37,6 +41,9 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class TestController {
 
+    @Resource
+    private DailyClotherFeelDao dao;
+
     @RequestMapping("/test")
     public ReturnT test(){
         log.info("test接口访问成功");
@@ -46,6 +53,17 @@ public class TestController {
     public ReturnT error(){
         log.info("error访问成功");
         return new ReturnT(""+1/0);
+    }
+
+    @RequestMapping("/dressed")
+    public ReturnT dressed(){
+//        DailyClotherFeelDo dailyClotherFeelDo=DailyClotherFeelDo.builder().dressedClother("1").dressedHair("1").dressedSock("1")
+//                .dressedTrouser("1").time(new Date()).feel("刚好").maxTemperature(13).minTemperature(-2).outTemperature(0)
+//                .kinectTemperature(3).windPower(1).weather("晴天").build();
+//        int res= dao.insert(dailyClotherFeelDo);
+        DailyClotherFeelDo dailyClotherFeelDo=DailyClotherFeelDo.builder().id(1L).build();
+
+        return new ReturnT(dao.selectByCondition(dailyClotherFeelDo));
     }
 
     @RequestMapping(value = "/get")
