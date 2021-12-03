@@ -15,5 +15,13 @@ public class CommonConstants {
      * 年月日格式化
      */
     public static final String DAY_DATE_FORMAT="yyyy-MM-dd";
+    /**
+     * 启用 dev 配置环境
+     */
+    public static final String PROFILE_DEV="dev";
+    /**
+     * 启用 online 配置环境
+     */
+    public static final String PROFILE_ONLINE="online";
 
 }

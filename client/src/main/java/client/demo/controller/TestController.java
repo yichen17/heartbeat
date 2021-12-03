@@ -1,5 +1,6 @@
 package client.demo.controller;
 
+import client.demo.config.CustomConfig;
 import client.demo.dao.DailyClotherFeelDao;
 import client.demo.model.DailyClotherFeelDo;
 import client.demo.service.VisitHostService;
@@ -61,9 +62,10 @@ public class TestController {
 //                .dressedTrouser("1").time(new Date()).feel("刚好").maxTemperature(13).minTemperature(-2).outTemperature(0)
 //                .kinectTemperature(3).windPower(1).weather("晴天").build();
 //        int res= dao.insert(dailyClotherFeelDo);
-        DailyClotherFeelDo dailyClotherFeelDo=DailyClotherFeelDo.builder().id(1L).build();
+//        DailyClotherFeelDo dailyClotherFeelDo=DailyClotherFeelDo.builder().id(1L).build();
 
-        return new ReturnT(dao.selectByCondition(dailyClotherFeelDo));
+//        return new ReturnT(dao.selectByCondition(dailyClotherFeelDo));
+        return new ReturnT(CustomConfig.env);
     }
 
     @RequestMapping(value = "/get")
