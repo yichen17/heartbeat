@@ -1,5 +1,7 @@
 package client.demo.task;
 
+import client.demo.config.CustomConfig;
+import client.demo.constants.CommonConstants;
 import client.demo.dao.HotNewsBackMapper;
 import client.demo.dao.HotNewsMapper;
 import client.demo.model.HotNewsBack;
@@ -99,8 +101,10 @@ public class HotNewsTask {
                 }
             }
             log.info("totalA {},errorA {}, totalB {}, errorB {}",totalA,errorA,totalB,errorB);
-            MailUtil.send("q07218396@163.com", "每天百度热门信息记录",
-                    "扩展表 => success "+totalA+" error "+errorA+". 一般表 => success "+totalB+" error "+errorB, false);
+            if(CommonConstants.PROFILE_ONLINE.equals(CustomConfig.env)){
+                MailUtil.send("q07218396@163.com", "每天百度热门信息记录",
+                        "扩展表 => success "+totalA+" error "+errorA+". 一般表 => success "+totalB+" error "+errorB, false);
+            }
         } catch (IOException e) {
             log.warn("jsoup 获取数据出错");
         }

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="client.demo.dao.DailyClotherFeelDao" >
+
+    <resultMap id="baseMap" type="client.demo.model.DailyClotherFeelDo">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="time" column="time" jdbcType="TIMESTAMP"/>
+        <result property="maxTemperature" column="max_temperature" jdbcType="INTEGER"/>
+        <result property="minTemperature" column="min_temperature" jdbcType="INTEGER"/>
+        <result property="outTemperature" column="out_temperature" jdbcType="INTEGER"/>
+        <result property="kinectTemperature" column="kinect_temperature" jdbcType="INTEGER"/>
+        <result property="windPower" column="wind_power" jdbcType="INTEGER"/>
+        <result property="dressedHair" column="dressed_hair" jdbcType="VARCHAR" />
+        <result property="dressedClother" column="dressed_clother" jdbcType="VARCHAR" />
+        <result property="dressedTrouser" column="dressed_trouser" jdbcType="VARCHAR" />
+        <result property="dressedSock" column="dressed_sock" jdbcType="VARCHAR" />
+        <result property="weather" column="weather" jdbcType="VARCHAR" />
+        <result property="feel" column="feel" jdbcType="VARCHAR" />
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="baseColumnList" >
+        `id`,`time`,`max_temperature`,`min_temperature`,`out_temperature`,`kinect_temperature`,
+        `wind_power`,`dressed_hair`,`dressed_clother`,`dressed_trouser`,`dressed_sock`,`weather`,`feel`,`create_time`,`update_time`
+    </sql>
+
+    <insert id="insert" parameterType="client.demo.model.DailyClotherFeelDo">
+        <selectKey resultType="java.lang.Long" keyProperty="id" order="AFTER" >
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        insert into t_daliy_clother_feel(`id`,`time`,`max_temperature`,`min_temperature`,`out_temperature`,`kinect_temperature`,
+        `wind_power`,`dressed_hair`,`dressed_clother`,`dressed_trouser`,`dressed_sock`,`weather`,`feel`)values (#{id,jdbcType=BIGINT},
+        #{time,jdbcType=TIMESTAMP},#{maxTemperature,jdbcType=INTEGER},#{minTemperature,jdbcType=INTEGER},#{outTemperature,jdbcType=INTEGER},
+        #{kinectTemperature,jdbcType=INTEGER},#{windPower,jdbcType=INTEGER},#{dressedHair,jdbcType=VARCHAR},#{dressedClother,jdbcType=VARCHAR}
+        ,#{dressedTrouser,jdbcType=VARCHAR},#{dressedSock,jdbcType=VARCHAR},#{weather,jdbcType=VARCHAR},#{feel,jdbcType=VARCHAR});
+    </insert>
+
+    <select id="selectByCondition" parameterType="client.demo.model.DailyClotherFeelDo" resultMap="baseMap">
+        select
+        <include refid="baseColumnList"></include>
+        from t_daliy_clother_feel where 1=1
+        <trim suffixOverrides=",">
+            <if test="id != null">
+                and id = #{id,jdbcType=BIGINT},
+            </if>
+            <if test="time != null">
+                and time = #{time,jdbcType=TIMESTAMP},
+            </if>
+            <if test="windPower != null">
+                and wind_power = #{windPower,jdbcType=INTEGER},
+            </if>
+            <if test="dressedSock != null">
+                and dressed_sock = #{dressedSock,jdbcType=VARCHAR},
+            </if>
+            <if test="dressedTrouser != null">
+                and dressed_trouser = #{dressedTrouser,jdbcType=VARCHAR},
+            </if>
+            <if test="dressedClother != null">
+                and dressed_clother = #{dressedClother,jdbcType=VARCHAR},
+            </if>
+            <if test="dressedHair != null">
+                and dressed_hair = #{dressedHair,jdbcType=VARCHAR},
+            </if>
+            <if test="weather != null">
+                and weather = #{weather,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </select>
+
+
+</mapper>
