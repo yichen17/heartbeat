@@ -4,20 +4,27 @@ import client.demo.config.CustomConfig;
 import client.demo.constants.CommonConstants;
 import client.demo.dao.HotNewsBackMapper;
 import client.demo.dao.HotNewsMapper;
+import client.demo.dao.SysConfigMapper;
 import client.demo.model.HotNewsBack;
 import client.demo.model.HotNewsWithBLOBs;
+import client.demo.model.SysConfig;
+import client.demo.service.SysConfigService;
 import cn.hutool.extra.mail.MailUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,6 +44,10 @@ public class HotNewsTask {
 
     @Autowired
     private HotNewsBackMapper hotNewsBackMapper;
+
+    @Autowired
+    private SysConfigService sysConfigService;
+
     /**
      * 访问量 pattern， 获取访问量中的数值
      */
@@ -44,11 +55,11 @@ public class HotNewsTask {
     /**
      * 百度请求url
      */
-    private String baidu_url="https://www.baidu.com/s?wd=1";
+    private static final String BAIDU_URL="https://www.baidu.com/s?wd=11";
     /**
      * 知乎请求 url
      */
-    private String zhihu_url="https://www.zhihu.com/hot";
+    private static final String ZHIHU_URL="https://www.zhihu.com/hot";
 
 
 
@@ -57,11 +68,24 @@ public class HotNewsTask {
     /**
      *  百度 热门 新闻 记录
      */
-    @Scheduled(cron = "0 0 8,19 * * ?")
-//    @Scheduled(cron = "0 * * * * ?")
+//    @Scheduled(cron = "0 0 8,19 * * ?")
+    @Scheduled(cron = "* * * * * ?")
     public void loadHotNewsBaidu() {
+
+        Map<String,String> header = new HashMap<>(16);
+        header.put("cache-control","no-cache");
+        header.put("pragma","no-cache");
+        header.put("referer",BAIDU_URL);
+        header.put("user-agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36");
+        String cookie = sysConfigService.selectByKey(CommonConstants.BAIDU_COOKIE).getOptionValue();
+        if (StringUtils.isEmpty(cookie)){
+            log.error("查询系统配置 key {} 未查到",CommonConstants.BAIDU_COOKIE);
+            return ;
+        }
+        header.put("Cookie",cookie);
+
         try{
-            Document doc = Jsoup.connect(baidu_url).timeout(2000).get();
+            Document doc = Jsoup.connect(BAIDU_URL).headers(header).timeout(2000).get();
             Element hotNews = doc.getElementsByClass("opr-toplist1-table_3K7iH").get(0);
             // 遍历 有2个 一个被隐藏了
             int totalA,errorA,totalB,errorB;
@@ -71,12 +95,19 @@ public class HotNewsTask {
                 for(int j=0;j<child.childNodeSize();j++){
                     //  有效数据节点
                     Element news = child.child(j);
-                    // 访问量
-                    String visits=news.child(1).textNodes().get(0).text();
+                    // 访问量    2022-03-19  改版没有访问量了
+//                    String visits=news.child(1).textNodes().get(0).text();
+                    String visits = "0w";
                     // 标题
                     String title=news.child(0).child(1).textNodes().get(0).text();
-                    // 序号
-                    String no=news.child(0).child(0).textNodes().get(0).text();
+                    // 序号  2022-03-19  第一个是向上非数字
+                    String no ;
+                    try {
+                        no = news.child(0).child(0).textNodes().get(0).text();
+                    }
+                    catch (Exception e){
+                        no = "-1";
+                    }
                     // 具体页面 uri
                     String uri=news.child(0).getElementsByTag("a").attr("href");
 
@@ -107,6 +138,9 @@ public class HotNewsTask {
             }
         } catch (IOException e) {
             log.warn("jsoup 获取数据出错");
+            if(CommonConstants.PROFILE_ONLINE.equals(CustomConfig.env)){
+                MailUtil.send("q07218396@163.com", "每天百度热门信息记录", "执行出错"+e.getMessage(), false);
+            }
         }
     }
 
@@ -156,7 +190,7 @@ public class HotNewsTask {
 //    @Scheduled(cron = "0 0 6,17 * * ?")
 //    public void loadHotNewsZhihu(){
 //        try{
-//            Document doc = Jsoup.connect(zhihu_url).get();
+//            Document doc = Jsoup.connect(ZHIHU_URL).get();
 //            Elements hotList = doc.getElementsByClass("HotList-list");
 //
 //        } catch (IOException e) {
@@ -165,16 +199,27 @@ public class HotNewsTask {
 //
 //    }
 
-//    public static void main(String[] args) {
-//        try{
+    public static void main(String[] args) {
+        try{
+            Map<String,String> header = new HashMap<>();
+//            header.put("cache-control","no-cache");
+//            header.put("pragma","no-cache");
+//            header.put("referer",BAIDU_URL);
+//            header.put("user-agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36");
+            header.put("Cookie","BIDUPSID=6295B6CB9DC0630E10BCB844423D665F; PSTM=1600236153; __yjs_duid=1_d30495de07c00cbdde196fa89da1a3381619846723067; MCITY=-%3A; BDUSS=m1LMUNsSHlLaVdiRmhPZTVQMzV0Zkg4VEZyTWN4OHc4djlQazlTWH4xT3dwSk5oRVFBQUFBJCQAAAAAAAAAAAEAAABoTb6geMnBwcF4tcezoXgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALAXbGGwF2xhZ; BDUSS_BFESS=m1LMUNsSHlLaVdiRmhPZTVQMzV0Zkg4VEZyTWN4OHc4djlQazlTWH4xT3dwSk5oRVFBQUFBJCQAAAAAAAAAAAEAAABoTb6geMnBwcF4tcezoXgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALAXbGGwF2xhZ; BAIDUID=1F6B36221D29C43B72FE70A549AD3B55:FG=1; BDORZ=B490B5EBF6F3CD402E515D22BCDA1598; BDSFRCVID=jlCOJeC62uJgHl6Dbfqvb_-jhHIMdMOTH6aomZEOJbDFrz9q0T_UEG0P5M8g0KuMWSJQogKK0mOTHvtF_2uxOjjg8UtVJeC6EG0Ptf8g0f5; H_BDCLCKID_SF=tb-j_D--JI_3DR7mbDTBhnLO-fPX5-RLfKQQ5h7F5l8-h45_bU7Sjx0VblQq5q4L2Db7al6eBl7xOKQphPcAQf4p-4OlbJI8-RRnMM5N3KJmMqC9bT3v5fui0P6I2-biWbRL2MbdbtbP_IoG2Mn8M4bb3qOpBtQmJeTxoUJ25DnJhbLGe4bK-Tr3jGKOtfK; BDSFRCVID_BFESS=jlCOJeC62uJgHl6Dbfqvb_-jhHIMdMOTH6aomZEOJbDFrz9q0T_UEG0P5M8g0KuMWSJQogKK0mOTHvtF_2uxOjjg8UtVJeC6EG0Ptf8g0f5; H_BDCLCKID_SF_BFESS=tb-j_D--JI_3DR7mbDTBhnLO-fPX5-RLfKQQ5h7F5l8-h45_bU7Sjx0VblQq5q4L2Db7al6eBl7xOKQphPcAQf4p-4OlbJI8-RRnMM5N3KJmMqC9bT3v5fui0P6I2-biWbRL2MbdbtbP_IoG2Mn8M4bb3qOpBtQmJeTxoUJ25DnJhbLGe4bK-Tr3jGKOtfK; delPer=0; PSINO=1; H_PS_PSSID=35836_35106_31253_35831_35979_36087_34584_36122_36075_35994_35320_26350_36115_35723_35877_36102; BAIDUID_BFESS=304E5D6A9E5A323BAEAB60F464DD4911:FG=1; BA_HECTOR=0k2ha0a585ak0k003c1h3bibv0r");
+            Document doc = Jsoup.connect(BAIDU_URL).headers(header).timeout(5000).get();
+            Element hotNews = doc.getElementsByClass("cr-content new-pmd").get(0);
+            System.out.println(hotNews);
+
 //            Document doc = Jsoup.connect("https://www.zhihu.com/hot").get();
 //            Elements hotList = doc.getElementsByClass("HotList-list");
 //            System.out.println("===");
-//
-//        } catch (IOException e) {
-//            log.warn("jsoup 获取数据出错");
-//        }
-//    }
+
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+            log.error("jsoup 获取数据出错 {} ",e.getMessage(),e);
+        }
+    }
 
 
 }

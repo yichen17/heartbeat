@@ -94,11 +94,14 @@ public class WeatherTask {
             else{
                 log.warn("未请求到数据");
                 if(CommonConstants.PROFILE_ONLINE.equals(CustomConfig.env)){
-                    MailUtil.send("q07218396@163.com", "每日天气记录出错", "请求气象局接口出错", false);
+                    MailUtil.send("q07218396@163.com", "每日天气记录出错", "未请求到数据", false);
                 }
             }
         } catch (ParseException e) {
             log.warn("转换日期出错 {}",fetchTime);
+            if(CommonConstants.PROFILE_ONLINE.equals(CustomConfig.env)){
+                MailUtil.send("q07218396@163.com", "每日天气记录出错", "执行异常"+e.getMessage(), false);
+            }
         }
     }
 

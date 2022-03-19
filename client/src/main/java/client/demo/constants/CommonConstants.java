@@ -24,4 +24,10 @@ public class CommonConstants {
      */
     public static final String PROFILE_ONLINE="online";
 
+    /**
+     * 百度人们信息查询token
+     */
+    public static final String BAIDU_COOKIE = "baidu_cookie";
+
+
 }
