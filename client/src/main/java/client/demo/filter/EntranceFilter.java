@@ -149,9 +149,10 @@ public class EntranceFilter implements Filter {
             jsonObject.put("msg",body.getMsg());
             visitLogService.insert(hostId,uri,"N",jsonObject);
             logger.info("异常请求日志已记录");
-            // 拒绝次数达到指定次数，ip禁用
-            if(visitLogByHostIdAndValid.size()>localRejectTime){
-                int d = visitHostService.rejectIpByIp(remoteAddr);
+            // 拒绝次数达到指定次数，ip禁用   =>  历史次数加刚才插入的次数
+            if(visitLogByHostIdAndValid.size() + 1 > localRejectTime){
+                visitHost.setStatus("N");
+                int d = visitHostService.update(visitHost);
                 if(d>0){
                     logger.info("ip:{}被禁止访问",remoteAddr);
                 }
