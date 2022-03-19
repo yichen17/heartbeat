@@ -68,8 +68,8 @@ public class HotNewsTask {
     /**
      *  百度 热门 新闻 记录
      */
-//    @Scheduled(cron = "0 0 8,19 * * ?")
-    @Scheduled(cron = "* * * * * ?")
+    @Scheduled(cron = "0 0 11,23 * * ?")
+//    @Scheduled(cron = "* * * * * ?")
     public void loadHotNewsBaidu() {
 
         Map<String,String> header = new HashMap<>(16);
