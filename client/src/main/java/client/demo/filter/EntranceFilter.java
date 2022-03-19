@@ -6,6 +6,7 @@ import client.demo.service.VisitHostService;
 import client.demo.service.VisitLogService;
 import client.demo.utils.ReturnT;
 import cn.hutool.core.date.DateUtil;
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import org.apache.catalina.connector.Response;
 import org.apache.catalina.connector.ResponseFacade;
@@ -20,10 +21,11 @@ import javax.servlet.*;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Field;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 
 /**
@@ -51,6 +53,9 @@ public class EntranceFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+
+        printRequestData(request);
+
         HttpServletRequest req = (HttpServletRequest) request;
         // 请求的  uri
         String uri = req.getRequestURI();
@@ -166,20 +171,54 @@ public class EntranceFilter implements Filter {
             else{
                 logger.error("visit_host更新拒绝时间失败，参数为{},执行影响行数为{}",visitHost,d);
             }
-
-
         }
-        else{
-            JSONObject jsonObject=new JSONObject();
-            jsonObject.put("data",body.getData());
-            jsonObject.put("msg",body.getMsg());
-            visitLogService.insert(hostId,uri,"Y",jsonObject);
+        else {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("data", body.getData());
+            jsonObject.put("msg", body.getMsg());
+            visitLogService.insert(hostId, uri, "Y", jsonObject);
             logger.info("正常请求日志已记录");
             int d = visitLogService.invalidLogByHostId(hostId);
-            logger.info("成功将{}条记录设置为无效记录",d);
+            logger.info("成功将{}条记录设置为无效记录", d);
         }
-        
-
-
     }
+
+    public void printRequestData(ServletRequest request){
+        Map<String,String> headers = new HashMap<>(16);
+        try {
+            if (request instanceof HttpServletRequest){
+                Enumeration<String> headerNames = ((HttpServletRequest) request).getHeaderNames();
+                while (headerNames.hasMoreElements()){
+                    String name = headerNames.nextElement();
+                    headers.put(name,((HttpServletRequest) request).getHeader(name));
+                }
+                // 可以获取表单数据
+                Map<String, String[]> formParams = request.getParameterMap();
+                // 获取json数据
+                String result = getReqString((HttpServletRequest) request);
+                logger.info("请求ip地址 {}，请求uri {}，请求端口 {} , 请求头数据 {} form请求体数据 {} json请求体数据 {}",
+                        request.getRemoteHost(),((HttpServletRequest) request).getRequestURI(),request.getRemotePort(),
+                        JSON.toJSONString(headers), JSON.toJSONString(formParams),result);
+            }
+        }
+        catch (Exception e){
+            logger.error("请求ip {} ，请求 uri {}，请求端口 {} 出现错误 {}",
+                    request.getRemoteHost(),((HttpServletRequest) request).getRequestURI(), request.getRemotePort(),e.getMessage(),e);
+        }
+    }
+
+    private String getReqString(HttpServletRequest request) {
+        StringBuilder sb = new StringBuilder();
+        String line;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(request.getInputStream()))) {
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+        } catch (IOException e) {
+            logger.error(e.getMessage());
+        }
+        return String.valueOf(sb);
+    }
+
+
 }
