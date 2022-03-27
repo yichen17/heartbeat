@@ -64,6 +64,9 @@ public class HotNewsTask {
      */
     private static final String ZHIHU_URL="https://www.zhihu.com/hot";
 
+    /**
+     * 查询信息
+     */
     private static final String[] QUERY_THINGS = {"怎么好好学习","老是想打游戏","社会心理学","小朋友你是不是有很多问号","what are you doing","you see see you one day day"};
 
 
@@ -81,6 +84,7 @@ public class HotNewsTask {
         header.put("referer",BAIDU_URL);
         header.put("user-agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36");
         String cookie = sysConfigService.selectByKey(CommonConstants.BAIDU_COOKIE).getOptionValue();
+        String baseBaiDuUrl = sysConfigService.selectByKey(CommonConstants.BAIDU_BASE_URL).getOptionValue();
         if (StringUtils.isEmpty(cookie)){
             log.error("查询系统配置 key {} 未查到",CommonConstants.BAIDU_COOKIE);
             return ;
@@ -88,7 +92,7 @@ public class HotNewsTask {
         header.put("Cookie",cookie);
 
         try{
-            String queryUrl = BAIDU_URL + URLEncoder.encode(QUERY_THINGS[(int) (System.currentTimeMillis()%QUERY_THINGS.length)],"utf-8");
+            String queryUrl = baseBaiDuUrl + URLEncoder.encode(QUERY_THINGS[(int) (System.currentTimeMillis()%QUERY_THINGS.length)],"utf-8");
             log.info("查询热门新闻，请求头 {} ,URL {}", JSON.toJSONString(header),queryUrl);
             Document doc = Jsoup.connect(queryUrl).headers(header).timeout(2000).get();
             Element hotNews = doc.getElementsByClass("opr-toplist1-table_3K7iH").get(0);

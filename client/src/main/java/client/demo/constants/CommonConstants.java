@@ -29,5 +29,10 @@ public class CommonConstants {
      */
     public static final String BAIDU_COOKIE = "baidu_cookie";
 
+    /**
+     * 查询条件基本 url
+     */
+    public static final String BAIDU_BASE_URL = "baidu_base_url";
+
 
 }

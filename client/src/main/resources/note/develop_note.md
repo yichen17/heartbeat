@@ -38,4 +38,9 @@
 </html>
 ```
 ### 解决办法
-经过测试，发现是通过请求头中的token字段用以区分的，故手动在请求头中加入浏览器访问的token
+经过测试，发现是通过请求头中的cookie字段用以区分的，故手动在请求头中加入浏览器访问的token
+
+## 百度请求地址变更记录
+> https://www.baidu.com/s?wd=    // 最初版本
+> https://www.baidu.com/s?ie=UTF-8&wd=%E6%91%B8%E6%91%B8%E5%A4%B4    // 这个会重定向到 http 变为下面这种
+> http://www.baidu.com/s?ie=UTF-8&wd=%E6%91%B8%E6%91%B8%E5%A4%B4    // 2022-03-27 替换
