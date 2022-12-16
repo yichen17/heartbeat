@@ -28,7 +28,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(value = Exception.class)
     public ReturnT<String> exceptionHandler(HttpServletRequest request, Exception e){
-        log.error("全局捕获Exception异常，异常信息为  ==> {} \n 堆栈信息  ===> {}",e.getMessage(), Arrays.toString(e.getStackTrace()));
+        log.error("全局捕获Exception异常，异常信息为  ==> {} \n 堆栈信息  ===> ", e.getMessage(), e);
         if(CommonConstants.PROFILE_ONLINE.equals(CustomConfig.env)){
             MailUtil.send("q07218396@163.com", "服务捕获异常",
                     e.getMessage()+"\n"+Arrays.toString(e.getStackTrace()), false);

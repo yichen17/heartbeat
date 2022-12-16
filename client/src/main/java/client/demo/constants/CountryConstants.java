@@ -11,6 +11,6 @@ public class CountryConstants {
     /**
      * 中国  国家码值
      */
-    public static final String CHIAN="0";
+    public static final String CHINA="0";
 
 }

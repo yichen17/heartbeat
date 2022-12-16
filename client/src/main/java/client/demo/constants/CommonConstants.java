@@ -34,5 +34,10 @@ public class CommonConstants {
      */
     public static final String BAIDU_BASE_URL = "baidu_base_url";
 
+    /**
+     * 接口请求密钥验证，简单版本。验证通过才能证明是正确的人请求
+     */
+    public static final String REQUEST_KEY = "ksytj";
+
 
 }

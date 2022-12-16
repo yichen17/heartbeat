@@ -35,8 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 @EnableScheduling
 @Slf4j
 public class WeatherTask {
-
-
     @Autowired
     private WeatherService weatherService;
 
@@ -61,8 +59,24 @@ public class WeatherTask {
             sdf=new SimpleDateFormat(CommonConstants.NORMAL_DATE_FORMAT);
             Date date=sdf.parse(fetchTime);
             long timestamp=date.getTime();
-            String body = HttpRequest.get("https://weather.cma.cn/api/map/weather/1?t=" + timestamp)
-                    .timeout(2000).execute().body();
+            String url = "https://weather.cma.cn/api/map/weather/1?t=" + timestamp;
+            requestDataAndSave(day, url);
+        } catch (ParseException e) {
+            log.warn("转换日期出错 {}",fetchTime);
+            if(CommonConstants.PROFILE_ONLINE.equals(CustomConfig.env)){
+                MailUtil.send("q07218396@163.com", "每日天气记录出错", "执行异常"+e.getMessage(), false);
+            }
+        }
+    }
+
+    /**
+     * 请求接口，将结果保存到数据库中
+     * @param day 今天日期
+     * @param url 请求三方接口地址
+     */
+    public void requestDataAndSave(String day, String url){
+        try{
+            String body = HttpRequest.get(url).timeout(2000).execute().body();
 //            log.info("{} 调用气象局接口获取返回值 {}",fetchTime,body);
             WeatherResponse weatherResponse = JSONObject.parseObject(body, WeatherResponse.class);
             if("0".equals(weatherResponse.getCode())){
@@ -74,9 +88,9 @@ public class WeatherTask {
                 //  数组坐标  1-县(具体地方)  2-国家  4-纬度  5-经度  6-最高温度  7-天气  9-风向  10-风力
                 //   11-最低温度   12-天气  14-风向   15-风力   17-码值(前缀可以区分所属城市)
                 city.forEach(p->{
-                    Weather weather=getWeather(p.get(17),p.get(1), CountryConstants.CHIAN,p.get(4),p.get(5),p.get(6),p.get(7),
+                    Weather weather=getWeather(p.get(17),p.get(1), CountryConstants.CHINA,p.get(4),p.get(5),p.get(6),p.get(7),
                             p.get(9),p.get(10),day,p.get(11),p.get(12),p.get(14),p.get(15));
-                    WeatherBack weatherBack=getWeatherBack(p.get(17),p.get(1),CountryConstants.CHIAN,p.get(4),p.get(5),p.get(6),
+                    WeatherBack weatherBack=getWeatherBack(p.get(17),p.get(1),CountryConstants.CHINA,p.get(4),p.get(5),p.get(6),
                             p.get(7),p.get(9),p.get(10),day,p.get(11),p.get(12),p.get(14),p.get(15));
                     int resA=weatherService.insert(weather);
                     int resB=weatherServiceBack.insert(weatherBack);
@@ -97,13 +111,14 @@ public class WeatherTask {
                     MailUtil.send("q07218396@163.com", "每日天气记录出错", "未请求到数据", false);
                 }
             }
-        } catch (ParseException e) {
-            log.warn("转换日期出错 {}",fetchTime);
+        } catch (Exception e) {
+            log.warn("转换日期出错 {}",day);
             if(CommonConstants.PROFILE_ONLINE.equals(CustomConfig.env)){
                 MailUtil.send("q07218396@163.com", "每日天气记录出错", "执行异常"+e.getMessage(), false);
             }
         }
     }
+
 
     /**
      * 入参生成天气对象
