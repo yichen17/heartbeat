@@ -2,34 +2,20 @@ package client.demo.controller;
 
 import client.demo.config.CustomConfig;
 import client.demo.dao.DailyClotherFeelDao;
-import client.demo.model.DailyClotherFeelDo;
-import client.demo.service.VisitHostService;
-import client.demo.service.VisitLogService;
 import client.demo.utils.MapTools;
 import client.demo.utils.ReturnT;
-import cn.hutool.core.io.file.FileReader;
-import cn.hutool.core.util.CharsetUtil;
-import cn.hutool.crypto.symmetric.SymmetricAlgorithm;
-import cn.hutool.crypto.symmetric.SymmetricCrypto;
 import com.alibaba.fastjson.JSONObject;
 import com.yichen.handler.NettyMessage;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.util.http.fileupload.IOUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import sun.security.provider.Sun;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedInputStream;
-import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 
 /**

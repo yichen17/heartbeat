@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -35,7 +36,7 @@ import java.util.*;
  * @describe 入口过滤器
  *  通过一下三个注解这里实现过滤器功能，也可以通过 FilterConfig 使 filter 生效
  */
-@Order(0)
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @WebFilter(urlPatterns = "/*")
 @Component
 public class EntranceFilter implements Filter {
@@ -54,15 +55,21 @@ public class EntranceFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
 
-        printRequestData(request);
+        if (!(request instanceof HttpServletRequest)){
+            logger.warn("请求不是HttpServletRequest");
+            return;
+        }
 
-        HttpServletRequest req = (HttpServletRequest) request;
+        // 包装 request 因为 inputStream 只能读取一次
+        // ContentCachingRequestWrapper 还是只能读取一次，只不过第二次读取的时候会缓存可以通过方法getContentAsByteArray读取缓存
+        RequestWrapper requestWrapper = new RequestWrapper((HttpServletRequest) request);
+        printRequestData(requestWrapper);
         // 请求的  uri
-        String uri = req.getRequestURI();
+        String uri = requestWrapper.getRequestURI();
         // 排除与前端交互的uri，它们返回的是 字符串，没有走我们默认的 返回消息体。
         if(uri.startsWith("/user") || uri.startsWith("/video") || uri.startsWith("/fix")){
             logger.info("请求uri为{},不进行请求记录",uri);
-            chain.doFilter(request,response);
+            chain.doFilter(requestWrapper,response);
             return ;
         }
 
@@ -72,7 +79,7 @@ public class EntranceFilter implements Filter {
         long hostId=-1;
         int localRejectTime=-1;
         logger.info("EntranceFilter开始执行过滤操作");
-        String remoteAddr=request.getRemoteAddr();
+        String remoteAddr=requestWrapper.getRemoteAddr();
         // TODO id自增必须为主键，而 此处 访问ip也必须是唯一的，如果将两个都设置为主键，达不到目标要求， 这里我使用了唯一索引通过捕获索引异常
         long res=visitHostService.insert(remoteAddr,"Y",rejectTime);
         if(res>0){
@@ -105,7 +112,7 @@ public class EntranceFilter implements Filter {
             else{
                 logger.info("请求uri{}",uri);
                 // 放行。让请求继续执行
-                chain.doFilter(request,wrapper);
+                chain.doFilter(requestWrapper,wrapper);
             }
         }
 
@@ -183,27 +190,30 @@ public class EntranceFilter implements Filter {
         }
     }
 
-    public void printRequestData(ServletRequest request){
+    public void printRequestData(HttpServletRequest request){
         Map<String,String> headers = new HashMap<>(16);
         try {
-            if (request instanceof HttpServletRequest){
-                Enumeration<String> headerNames = ((HttpServletRequest) request).getHeaderNames();
-                while (headerNames.hasMoreElements()){
-                    String name = headerNames.nextElement();
-                    headers.put(name,((HttpServletRequest) request).getHeader(name));
-                }
-                // 可以获取表单数据
-                Map<String, String[]> formParams = request.getParameterMap();
-                // 获取json数据
-                String result = getReqString((HttpServletRequest) request);
-                logger.info("请求ip地址 {}，请求uri {}，请求端口 {} , 请求头数据 {} form请求体数据 {} json请求体数据 {}",
-                        request.getRemoteHost(),((HttpServletRequest) request).getRequestURI(),request.getRemotePort(),
-                        JSON.toJSONString(headers), JSON.toJSONString(formParams),result);
+            Enumeration<String> headerNames = request.getHeaderNames();
+            while (headerNames.hasMoreElements()){
+                String name = headerNames.nextElement();
+                headers.put(name, request.getHeader(name));
             }
+            // 可以获取表单数据   可以重复读取
+            Map<String, String[]> formParams = request.getParameterMap();
+            // 获取json数据
+            String result = getReqString(request);
+
+            // 测试数据重复读取
+//            Map<String, String[]> formParams2 = request.getParameterMap();
+//            String result2 = getReqString(request);
+
+            logger.info("请求ip地址 {}，请求uri {}，请求端口 {} , 请求头数据 {} form请求体数据 {} json请求体数据 {}",
+                    request.getRemoteHost(), request.getRequestURI(), request.getRemotePort(),
+                    JSON.toJSONString(headers), JSON.toJSONString(formParams),result);
         }
         catch (Exception e){
             logger.error("请求ip {} ，请求 uri {}，请求端口 {} 出现错误 {}",
-                    request.getRemoteHost(),((HttpServletRequest) request).getRequestURI(), request.getRemotePort(),e.getMessage(),e);
+                    request.getRemoteHost(),request.getRequestURI(), request.getRemotePort(),e.getMessage(),e);
         }
     }
 

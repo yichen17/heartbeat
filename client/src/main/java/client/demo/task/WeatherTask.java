@@ -1,15 +1,15 @@
 package client.demo.task;
 
-import client.demo.config.CustomConfig;
 import client.demo.constants.CommonConstants;
 import client.demo.constants.CountryConstants;
 import client.demo.model.Weather;
 import client.demo.model.WeatherBack;
+import client.demo.model.dto.MailNoticeDTO;
 import client.demo.model.dto.WeatherDate;
 import client.demo.model.dto.WeatherResponse;
 import client.demo.service.WeatherService;
 import client.demo.service.WeatherServiceBack;
-import cn.hutool.extra.mail.MailUtil;
+import client.demo.utils.MailNoticeUtil;
 import cn.hutool.http.HttpRequest;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
@@ -63,9 +63,10 @@ public class WeatherTask {
             requestDataAndSave(day, url);
         } catch (ParseException e) {
             log.warn("转换日期出错 {}",fetchTime);
-            if(CommonConstants.PROFILE_ONLINE.equals(CustomConfig.env)){
-                MailUtil.send("q07218396@163.com", "每日天气记录出错", "执行异常"+e.getMessage(), false);
-            }
+            MailNoticeDTO noticeDTO = MailNoticeDTO.builder()
+                    .msg(String.format("执行异常:%s", e.getMessage()))
+                    .subject("每日天气记录出错").isHtml(false).build();
+            MailNoticeUtil.sendToMail(noticeDTO);
         }
     }
 
@@ -75,6 +76,10 @@ public class WeatherTask {
      * @param url 请求三方接口地址
      */
     public void requestDataAndSave(String day, String url){
+        if(weatherService.findByDate(day) > 0){
+            log.info("{}当天的天气情况已记录", day);
+            return ;
+        }
         try{
             String body = HttpRequest.get(url).timeout(2000).execute().body();
 //            log.info("{} 调用气象局接口获取返回值 {}",fetchTime,body);
@@ -101,21 +106,24 @@ public class WeatherTask {
                     }
                 });
                 log.info("执行结果,normal total {}, back total {}",totalA,totalB);
-                if(CommonConstants.PROFILE_ONLINE.equals(CustomConfig.env)){
-                    MailUtil.send("q07218396@163.com", "每日天气记录完毕", "索引表记录"+totalA+"\n非索引表记录"+totalB, false);
-                }
+                MailNoticeDTO noticeDTO = MailNoticeDTO.builder()
+                        .msg(String.format("索引表记录:%s\n非索引表记录:%s", totalA, totalB))
+                        .subject("每日天气记录完毕").isHtml(false).build();
+                MailNoticeUtil.sendToMail(noticeDTO);
             }
             else{
                 log.warn("未请求到数据");
-                if(CommonConstants.PROFILE_ONLINE.equals(CustomConfig.env)){
-                    MailUtil.send("q07218396@163.com", "每日天气记录出错", "未请求到数据", false);
-                }
+                MailNoticeDTO noticeDTO = MailNoticeDTO.builder()
+                        .msg("未请求到数据")
+                        .subject("每日天气记录出错").isHtml(false).build();
+                MailNoticeUtil.sendToMail(noticeDTO);
             }
         } catch (Exception e) {
-            log.warn("转换日期出错 {}",day);
-            if(CommonConstants.PROFILE_ONLINE.equals(CustomConfig.env)){
-                MailUtil.send("q07218396@163.com", "每日天气记录出错", "执行异常"+e.getMessage(), false);
-            }
+            log.error("转换日期出错 {}",day);
+            MailNoticeDTO noticeDTO = MailNoticeDTO.builder()
+                    .msg(String.format("执行异常:%s", e.getMessage()))
+                    .subject("每日天气记录出错").isHtml(false).build();
+            MailNoticeUtil.sendToMail(noticeDTO);
         }
     }
 

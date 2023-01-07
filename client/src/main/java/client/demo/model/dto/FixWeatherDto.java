@@ -23,9 +23,14 @@ public class FixWeatherDto {
     private String key;
 
     /**
-     * 日期  yyyy-MM-dd hh:mm:ss
+     * 开始时间  yyyy-MM-dd hh:mm:ss
      */
-    private String date;
+    private String startTime;
+
+    /**
+     * 持续时间
+     */
+    private Integer duration;
 
 
 

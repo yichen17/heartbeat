@@ -1,21 +1,18 @@
 package client.demo.task;
 
-import client.demo.config.CustomConfig;
 import client.demo.constants.CommonConstants;
 import client.demo.dao.HotNewsBackMapper;
 import client.demo.dao.HotNewsMapper;
-import client.demo.dao.SysConfigMapper;
 import client.demo.model.HotNewsBack;
 import client.demo.model.HotNewsWithBLOBs;
-import client.demo.model.SysConfig;
+import client.demo.model.dto.MailNoticeDTO;
 import client.demo.service.SysConfigService;
-import cn.hutool.extra.mail.MailUtil;
+import client.demo.utils.MailNoticeUtil;
 import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -27,7 +24,6 @@ import java.net.URLEncoder;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -141,15 +137,16 @@ public class HotNewsTask {
                 }
             }
             log.info("totalA {},errorA {}, totalB {}, errorB {}",totalA,errorA,totalB,errorB);
-            if(CommonConstants.PROFILE_ONLINE.equals(CustomConfig.env)){
-                MailUtil.send("q07218396@163.com", "每天百度热门信息记录",
-                        "扩展表 => success "+totalA+" error "+errorA+". 一般表 => success "+totalB+" error "+errorB, false);
-            }
+            MailNoticeDTO noticeDTO = MailNoticeDTO.builder()
+                    .msg(String.format("扩展表 => success:%s,error:%s\n一般表 => success:%s,error:%s", totalA, errorA, totalB, errorB))
+                    .subject("每天百度热门信息记录").isHtml(false).build();
+            MailNoticeUtil.sendToMail(noticeDTO);
         } catch (IOException e) {
             log.error("jsoup 获取数据出错 {}",e.getMessage(),e);
-            if(CommonConstants.PROFILE_ONLINE.equals(CustomConfig.env)){
-                MailUtil.send("q07218396@163.com", "每天百度热门信息记录", "执行出错"+e.getMessage(), false);
-            }
+            MailNoticeDTO noticeDTO = MailNoticeDTO.builder()
+                    .msg(String.format("执行出错:%s", e.getMessage()))
+                    .subject("每天百度热门信息记录").isHtml(false).build();
+            MailNoticeUtil.sendToMail(noticeDTO);
         }
     }
 
