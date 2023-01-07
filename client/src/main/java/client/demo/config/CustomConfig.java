@@ -2,6 +2,7 @@ package client.demo.config;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
  * @describe 自定义配置，用于定义一些 自定义项，从配置文件中获取
  */
 @Component
+@Slf4j
 public class CustomConfig {
     /**
      * 启动配置文件类型， 有dev、online 等，
@@ -23,8 +25,9 @@ public class CustomConfig {
     /**
      * 这里通过 @Value 注入，注意 方法不能是静态方法。
      */
-    @Value("${yichen.conf.env}")
+    @Value("${spring.profiles.active}")
     public void setEnv(String env) {
+        log.warn("当前启动环境：{}", env);
         CustomConfig.env = env;
     }
 }
