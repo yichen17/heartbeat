@@ -2,6 +2,7 @@ package client.demo.controller;
 
 import client.demo.constants.CommonConstants;
 import client.demo.model.dto.FixWeatherDto;
+import client.demo.task.HotNewsTask;
 import client.demo.task.WeatherTask;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateTime;
@@ -12,10 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 import java.util.Objects;
@@ -33,6 +31,9 @@ public class FixController {
 
     @Autowired
     private WeatherTask weatherTask;
+
+    @Autowired
+    private HotNewsTask hotNewsTask;
 
     @RequestMapping("/test")
     public String test(){
@@ -93,6 +94,13 @@ public class FixController {
             return 1;
         }
         return 0;
+    }
+
+
+    @GetMapping("/fixHotNews")
+    public ReturnT<String> fixHotNews() {
+        hotNewsTask.loadHotNewsBaidu();
+        return ReturnUtils.success("触发成功");
     }
 
 }

@@ -18,6 +18,7 @@ import org.jsoup.nodes.Element;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -71,7 +72,7 @@ public class HotNewsTask {
     /**
      *  百度 热门 新闻 记录
      */
-//    @Scheduled(cron = "0 0 14,6 * * ?")
+    @Scheduled(cron = "0 0 14,6 * * ?")
     public void loadHotNewsBaidu() {
 
         Map<String,String> header = new HashMap<>(16);
@@ -90,9 +91,7 @@ public class HotNewsTask {
         try{
             String queryUrl = baseBaiDuUrl + URLEncoder.encode(QUERY_THINGS[(int) (System.currentTimeMillis()%QUERY_THINGS.length)],"utf-8");
             log.info("查询热门新闻，请求头 {} ,URL {}", JSON.toJSONString(header),queryUrl);
-            Document doc = Jsoup.connect(queryUrl).headers(header).timeout(2000).get();
-
-            String body = Jsoup.connect(queryUrl).headers(header).timeout(2000).execute().body();
+            String body = Jsoup.connect(queryUrl).headers(header).timeout(5000).execute().body();
             String regex = "<!--s-data:(.*?)-->";
 
             Pattern pattern = Pattern.compile(regex);
@@ -105,7 +104,10 @@ public class HotNewsTask {
             }
             List<String> newsInfoList = targetList.stream().filter(p -> p.contains("FYB_RD")).collect(Collectors.toList());
             if (CollectionUtils.isEmpty(newsInfoList)) {
-
+                MailNoticeDTO noticeDTO = MailNoticeDTO.builder()
+                        .msg("未过滤出热门数据项")
+                        .subject("每天百度热门信息记录").isHtml(false).build();
+                MailNoticeUtil.sendToMail(noticeDTO);
                 return;
             }
             String newsStr = JSONObject.parseObject(newsInfoList.get(0)).getString("bdListData");
@@ -128,7 +130,7 @@ public class HotNewsTask {
                         JSONObject details = JSONObject.parseObject(item);
                         // url也废了，没啥用，它调到搜索页面了
                         HotNewsWithBLOBs hotNewsWithBLOBs = constructHotNewsMapper("0", Optional.ofNullable(details.getInteger("index")).orElse(999),
-                                "https://www.baidu.com/" + details.getString("leftUrl"), now,
+                                "这次废了，记类别" + entry.getKey(), now,
                                 Optional.ofNullable(details.getString("link")).orElse("未获取到"),
                                 "这一次没有这个字段了", "", "", "");
                         hotNewsMapper.insert(hotNewsWithBLOBs);

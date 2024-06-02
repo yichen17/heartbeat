@@ -10,19 +10,20 @@ import com.yichen.model.ReturnT;
  */
 public class ReturnUtils {
 
-    public static ReturnT<?> success(String msg){
+    public static ReturnT success(String msg){
         return ReturnT.builder().msg(msg).code(ReturnT.SUCCESS_CODE).build();
     }
 
-    public static  ReturnT<?> success(String msg, Object data){
-        return ReturnT.builder().msg(msg).code(ReturnT.SUCCESS_CODE).content(data).build();
+    public static <T> ReturnT<T> success(String msg, T data){
+        return ReturnT.<T>builder().msg(msg)
+                .code(ReturnT.SUCCESS_CODE).content(data).build();
     }
 
-    public static  ReturnT<?> paramMiss(String msg){
+    public static  ReturnT paramMiss(String msg){
         return ReturnT.builder().msg(msg).code(ReturnT.SUCCESS_CODE).build();
     }
 
-    public static ReturnT<?> fail(String msg){
+    public static ReturnT fail(String msg){
         return ReturnT.builder().msg(msg).code(ReturnT.FAIL_CODE).build();
     }
 
