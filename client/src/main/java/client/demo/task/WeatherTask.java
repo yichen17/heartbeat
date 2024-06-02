@@ -47,7 +47,7 @@ public class WeatherTask {
      *      调用接口  https://weather.cma.cn/api/map/weather/1?t=1635210265612   尾部为时间戳
      */
     @Scheduled(cron = "0 0 6,18 * * ?")
-    private void loanWeatherEveryday(){
+    public void loanWeatherEveryday(){
         SimpleDateFormat sdf=new SimpleDateFormat(CommonConstants.DAY_DATE_FORMAT);
         String day=sdf.format(new Date());
         if(weatherService.findByDate(day)>0){

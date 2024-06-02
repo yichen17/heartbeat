@@ -9,6 +9,8 @@ import client.demo.model.dto.MailNoticeDTO;
 import client.demo.service.SysConfigService;
 import client.demo.utils.MailNoticeUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -16,16 +18,15 @@ import org.jsoup.nodes.Element;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.net.URLEncoder;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * @author Qiuxinchao
@@ -70,8 +71,7 @@ public class HotNewsTask {
     /**
      *  百度 热门 新闻 记录
      */
-    @Scheduled(cron = "0 0 14,6 * * ?")
-//    @Scheduled(cron = "* * * * * ?")
+//    @Scheduled(cron = "0 0 14,6 * * ?")
     public void loadHotNewsBaidu() {
 
         Map<String,String> header = new HashMap<>(16);
@@ -91,54 +91,53 @@ public class HotNewsTask {
             String queryUrl = baseBaiDuUrl + URLEncoder.encode(QUERY_THINGS[(int) (System.currentTimeMillis()%QUERY_THINGS.length)],"utf-8");
             log.info("查询热门新闻，请求头 {} ,URL {}", JSON.toJSONString(header),queryUrl);
             Document doc = Jsoup.connect(queryUrl).headers(header).timeout(2000).get();
-            Element hotNews = doc.getElementsByClass("opr-toplist1-table_3K7iH").get(0);
-            // 遍历 有2个 一个被隐藏了
-            int totalA,errorA,totalB,errorB;
-            totalA=0;errorA=0;totalB=0;errorB=0;
-            for(int i=0;i<hotNews.childNodeSize();i++){
-                Element child = hotNews.child(i);
-                for(int j=0;j<child.childNodeSize();j++){
-                    //  有效数据节点
-                    Element news = child.child(j);
-                    // 访问量    2022-03-19  改版没有访问量了
-//                    String visits=news.child(1).textNodes().get(0).text();
-                    String visits = "0w";
-                    // 标题
-                    String title=news.child(0).child(1).textNodes().get(0).text();
-                    // 序号  2022-03-19  第一个是向上非数字
-                    String no ;
-                    try {
-                        no = news.child(0).child(0).textNodes().get(0).text();
-                    }
-                    catch (Exception e){
-                        no = "-1";
-                    }
-                    // 具体页面 uri
-                    String uri=news.child(0).getElementsByTag("a").attr("href");
 
-                    HotNewsBack hotNewsBack=constructHotNewsMapper("0",Integer.parseInt(no),
-                            "https://www.baidu.com/"+uri,new Date(),title,visits);
-                    int resA = hotNewsBackMapper.insert(hotNewsBack);
-                    if (resA == 1) {
-                        totalA++;
-                    } else {
-                        errorA++;
-                    }
+            String body = Jsoup.connect(queryUrl).headers(header).timeout(2000).execute().body();
+            String regex = "<!--s-data:(.*?)-->";
 
-                    HotNewsWithBLOBs hotNewsWithBLOBs=constructHotNewsMapper("0",Integer.parseInt(no),
-                            "https://www.baidu.com/"+uri,new Date(),title,visits,"","","");
-                    int resB = hotNewsMapper.insert(hotNewsWithBLOBs);
-                    if (resB == 1) {
-                        totalB++;
-                    } else {
-                        errorB++;
-                    }
+            Pattern pattern = Pattern.compile(regex);
+            Matcher matcher = pattern.matcher(body);
 
-                }
+            List<String> targetList = new ArrayList<>();
+            while (matcher.find()) {
+                String extractedData = matcher.group(1).trim(); // 使用 group(1) 获取括号内的内容，并去掉首尾空格
+                targetList.add(extractedData);
             }
-            log.info("totalA {},errorA {}, totalB {}, errorB {}",totalA,errorA,totalB,errorB);
+            List<String> newsInfoList = targetList.stream().filter(p -> p.contains("FYB_RD")).collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(newsInfoList)) {
+
+                return;
+            }
+            String newsStr = JSONObject.parseObject(newsInfoList.get(0)).getString("bdListData");
+            Map<String, String> newsInfoMap = JSON.parseObject(newsStr, new TypeReference<Map<String, String>>() {});
+            // 四个类别   hot local economy livelihood
+            StringBuilder msg = new StringBuilder();
+            boolean first = true;
+            for (Map.Entry<String, String> entry : newsInfoMap.entrySet()) {
+                int count = 0;
+                if (!first) {
+                    msg.append("   ");
+                }
+                msg.append(entry.getKey());
+                Date now = new Date();
+                List<String> objects = JSON.parseArray(entry.getValue(), String.class);
+                for (String object : objects) {
+                    List<String> items = JSON.parseArray(object, String.class);
+                    for (String item : items) {
+                        count++;
+                        JSONObject details = JSONObject.parseObject(item);
+                        // url也废了，没啥用，它调到搜索页面了
+                        HotNewsWithBLOBs hotNewsWithBLOBs = constructHotNewsMapper("0", Optional.ofNullable(details.getInteger("index")).orElse(999),
+                                "https://www.baidu.com/" + details.getString("leftUrl"), now,
+                                Optional.ofNullable(details.getString("link")).orElse("未获取到"),
+                                "这一次没有这个字段了", "", "", "");
+                        hotNewsMapper.insert(hotNewsWithBLOBs);
+                    }
+                }
+                msg.append("总数:").append(count);
+            }
             MailNoticeDTO noticeDTO = MailNoticeDTO.builder()
-                    .msg(String.format("扩展表 => success:%s,error:%s\n一般表 => success:%s,error:%s", totalA, errorA, totalB, errorB))
+                    .msg(msg.toString())
                     .subject("每天百度热门信息记录").isHtml(false).build();
             MailNoticeUtil.sendToMail(noticeDTO);
         } catch (IOException e) {
@@ -165,10 +164,10 @@ public class HotNewsTask {
         hotNewsWithBlobs.setImageurl(imageUrl);
         hotNewsWithBlobs.setExtra1(extra1);
         hotNewsWithBlobs.setExtra2(extra2);
-        Matcher matcher = VISIT_PATTERN.matcher(visits);
-        if(matcher.find()){
-            hotNewsWithBlobs.setVisits(Integer.parseInt(matcher.group()));
-        }
+//        Matcher matcher = VISIT_PATTERN.matcher(visits);
+//        if(matcher.find()){
+//            hotNewsWithBlobs.setVisits(Integer.parseInt(matcher.group()));
+//        }
         return hotNewsWithBlobs;
     }
 
